@@ -1,0 +1,107 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f6f9fc;
+    color: #333;
+  }
+  
+  main {
+    padding: 30px;
+    max-width: 800px;
+    margin: auto;
+  }
+  
+  h2, h3 {
+    color: #2c3e50;
+  }
+  
+  section {
+    display: none;
+  }
+  
+  section.active {
+    display: block;
+    background-color: #ffffff;
+    padding: 25px;
+    margin-top: 50px;
+    border-radius: 8px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  input, button, select {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  
+  input:focus, select:focus {
+    border-color: #3498db;
+    outline: none;
+  }
+  
+  button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out;
+  }
+  
+  button:hover {
+    background-color: #2980b9;
+  }
+  
+  a {
+    color: #3498db;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  #error, #tracker-msg, #register-error, #login-error {
+    color: red;
+    margin-top: 10px;
+  }
+  
+  /* Table styles */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  th, td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #f2f4f8;
+    color: #34495e;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9fbfd;
+  }
+  
+  tr:hover {
+    background-color: #eef3f7;
+  }
+  
+  #welcome {
+    font-weight: bold;
+    margin: 15px 0;
+    font-size: 18px;
+    color: #2c3e50;
+  }
+  

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Crypto Tracker</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      section {
+        display: none;
+      }
+      section.active {
+        display: block;
+      }
+      input,
+      button {
+        display: block;
+        margin: 10px 0;
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section id="login" class="active">
+      <h2>Login</h2>
+      <input id="login-username" placeholder="Username" />
+      <input id="login-password" type="password" placeholder="Password" />
+      <button onclick="login()">Login</button>
+      <p>
+        Don't have an account?
+        <a href="#" onclick="switchTo('register')">Register here</a>
+      </p>
+      <div id="login-error" style="color: red"></div>
+    </section>
+
+    <section id="register">
+      <h2>Register</h2>
+      <input id="reg-username" placeholder="Username" />
+      <input id="reg-password" type="password" placeholder="Password" />
+      <input id="reg-phone" placeholder="Phone (+1234567890)" />
+      <button onclick="register()">Register</button>
+      <p>
+        Already have an account?
+        <a href="#" onclick="switchTo('login')">Login here</a>
+      </p>
+      <div id="register-error" style="color: red"></div>
+    </section>
+
+    <section id="tracker">
+      <h2>Subscribe to a Coin</h2>
+      <p id="welcome"></p>
+
+      <!-- Subscription form -->
+      <form id="subscribe-form" onsubmit="subscribe(event)">
+        <input id="symbol" placeholder="Symbol (BTC)" required />
+        <input id="buyPrice" type="number" placeholder="Buy Price" required />
+        <input id="quantity" type="number" placeholder="Quantity" required />
+        <input id="smallerThan" type="number" placeholder="Alert if below" />
+        <input id="biggerThan" type="number" placeholder="Alert if above" />
+        <button type="submit">Add Subscription</button>
+      </form>
+      <div id="tracker-msg"></div>
+
+      <!-- Edit subscription form (hidden initially) -->
+      <div id="edit-form" style="display: none">
+        <h3>Edit Subscription</h3>
+        <input id="edit-symbol" placeholder="Symbol (BTC)" required />
+        <input
+          id="edit-buyPrice"
+          type="number"
+          placeholder="Buy Price"
+          required
+        />
+        <input
+          id="edit-quantity"
+          type="number"
+          placeholder="Quantity"
+          required
+        />
+        <input
+          id="edit-smallerThan"
+          type="number"
+          placeholder="Alert if below"
+        />
+        <input
+          id="edit-biggerThan"
+          type="number"
+          placeholder="Alert if above"
+        />
+        <button onclick="updateSubscription()">Update Subscription</button>
+        <button onclick="cancelEdit()">Cancel</button>
+      </div>
+
+      <h3>Your Subscriptions</h3>
+      <table border="1" id="subs-table">
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Symbol</th>
+            <th>Buy Price</th>
+            <th>Quantity</th>
+            <th>Below</th>
+            <th>Above</th>
+            <th>Edit</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="removeSelected()">Remove Selected</button><br /><br />
+      <button onclick="logout()">Logout</button>
+    </section>
+
+    <script>
+      let currentUser = null;
+      let currentEditIndex = null;
+
+      function switchTo(sectionId) {
+        document
+          .querySelectorAll("section")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(sectionId).classList.add("active");
+        document.getElementById("login-error").textContent = "";
+        document.getElementById("register-error").textContent = "";
+        document.getElementById("tracker-msg").textContent = "";
+      }
+
+      function login() {
+        const username = document.getElementById("login-username").value.trim();
+        const password = document.getElementById("login-password").value;
+
+        fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ username, password }),
+        })
+          .then((res) => {
+            if (!res.ok)
+              throw new Error("Login failed. Please check your credentials.");
+            currentUser = username;
+            document.getElementById(
+              "welcome"
+            ).textContent = `Welcome, ${username}`;
+            switchTo("tracker");
+            loadSubscriptions();
+          })
+          .catch((err) => {
+            document.getElementById("login-error").textContent = err.message;
+          });
+      }
+
+      function register() {
+        const username = document.getElementById("reg-username").value.trim();
+        const password = document.getElementById("reg-password").value;
+        const phoneNumber = document.getElementById("reg-phone").value;
+
+        fetch("/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ username, password, phoneNumber }),
+        })
+          .then((res) => {
+            if (!res.ok)
+              return res.text().then((t) => {
+                throw new Error(t);
+              });
+            alert("Registration successful!");
+            switchTo("login");
+          })
+          .catch((err) => {
+            document.getElementById("register-error").textContent = err.message;
+          });
+      }
+
+      function subscribe(event) {
+        event.preventDefault();
+
+        const data = {
+          username: currentUser,
+          cryptoSymbol: document.getElementById("symbol").value,
+          buyPrice: document.getElementById("buyPrice").value,
+          quantity: document.getElementById("quantity").value,
+          isSmallerThan: document.getElementById("smallerThan").value,
+          isBiggerThan: document.getElementById("biggerThan").value,
+        };
+
+        fetch("/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams(data),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Subscription failed.");
+            document.getElementById("tracker-msg").style.color = "green";
+            document.getElementById("tracker-msg").textContent =
+              "Subscription added!";
+            loadSubscriptions();
+          })
+          .catch((err) => {
+            document.getElementById("tracker-msg").style.color = "red";
+            document.getElementById("tracker-msg").textContent = err.message;
+          });
+      }
+
+      function loadSubscriptions() {
+        fetch(`/subscriptions?username=${encodeURIComponent(currentUser)}`)
+          .then((res) => res.json())
+          .then((subs) => {
+            const tbody = document.querySelector("#subs-table tbody");
+            tbody.innerHTML = "";
+            subs.forEach((s, i) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+          <td><input type="checkbox" data-index="${i}"></td>
+          <td>${s.cryptoSymbol}</td>
+          <td>${s.buyPrice}</td>
+          <td>${s.quantity}</td>
+          <td>${s.isSmallerThan}</td>
+          <td>${s.isBiggerThan}</td>
+          <td><button onclick="editSub(${i})">Edit</button></td>
+        `;
+              tbody.appendChild(row);
+            });
+          });
+      }
+      function editSub(index) {
+        currentEditIndex = index;
+        fetch(`/subscriptions?username=${encodeURIComponent(currentUser)}`)
+          .then((res) => res.json())
+          .then((subs) => {
+            const sub = subs[index];
+            document.getElementById("edit-symbol").value = sub.cryptoSymbol;
+            document.getElementById("edit-buyPrice").value = sub.buyPrice;
+            document.getElementById("edit-quantity").value = sub.quantity;
+            document.getElementById("edit-smallerThan").value =
+              sub.isSmallerThan;
+            document.getElementById("edit-biggerThan").value = sub.isBiggerThan;
+          });
+
+        document.getElementById("edit-form").style.display = "block";
+        document.getElementById("subscribe-form").style.display = "none"; // Hide the original form
+      }
+      function updateSubscription() {
+        const updatedData = {
+          username: currentUser,
+          index: currentEditIndex,
+          cryptoSymbol: document.getElementById("edit-symbol").value,
+          buyPrice: document.getElementById("edit-buyPrice").value,
+          quantity: document.getElementById("edit-quantity").value,
+          isSmallerThan: document.getElementById("edit-smallerThan").value,
+          isBiggerThan: document.getElementById("edit-biggerThan").value,
+        };
+
+        fetch("/update-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedData),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Update failed.");
+            loadSubscriptions();
+            document.getElementById("edit-form").style.display = "none";
+            document.getElementById("subscribe-form").style.display = "block"; // Show the original form again
+          })
+          .catch((err) => {
+            alert("Error: " + err.message);
+          });
+      }
+
+      // Cancel the edit and return to normal state
+      function cancelEdit() {
+        document.getElementById("edit-form").style.display = "none";
+        document.getElementById("subscribe-form").style.display = "block";
+      }
+      function removeSelected() {
+        const selected = Array.from(
+          document.querySelectorAll("input[type='checkbox']:checked")
+        ).map((cb) => cb.getAttribute("data-index"));
+
+        fetch("/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: currentUser, indexes: selected }),
+        }).then(() => loadSubscriptions());
+      }
+      function logout() {
+        currentUser = null;
+        switchTo("login");
+      }
+    </script>
+  </body>
+</html>

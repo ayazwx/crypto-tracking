@@ -1,0 +1,17 @@
+[
+  {
+    "userId": "ayaz",
+    "password": "1234",
+    "phoneNumber": "905445207381",
+    "subscriptions": [
+      {
+        "cryptoSymbol": "ETH",
+        "buyPrice": 2000,
+        "quantity": 3,
+        "isNotify": true,
+        "isSmallerThan": 2100,
+        "isBiggerThan": 2400
+      }
+    ]
+  }
+]
